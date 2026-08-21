@@ -1,0 +1,17 @@
+# macOS
+.DS_Store
+
+# Swift Package Manager
+/.build/
+/.swiftpm/
+/Packages/
+
+# Xcode user and build data
+DerivedData/
+xcuserdata/
+*.xcuserstate
+*.xccheckout
+*.xcscmblueprint
+
+# Local credentials
+.netrc
