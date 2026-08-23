@@ -1,2 +1,4 @@
-Core/Sources/CSQLiteBundled/sqlite3.c linguist-vendored
-Core/Sources/CSQLiteBundled/include/sqlite3.h linguist-vendored
+Core/Sources/ThirdParty/CSQLiteBundled/sqlite3.c linguist-vendored
+Core/Sources/ThirdParty/CSQLiteBundled/include/sqlite3.h linguist-vendored
+Core/Sources/ThirdParty/CMiniz/miniz.c linguist-vendored
+Core/Sources/ThirdParty/CMiniz/include/miniz.h linguist-vendored
