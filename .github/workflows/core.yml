@@ -52,12 +52,28 @@ jobs:
           winget install --id Swift.Toolchain --exact --version 6.3.3 --source winget --silent --accept-package-agreements --accept-source-agreements --disable-interactivity
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
-          $machinePath = [Environment]::GetEnvironmentVariable("Path", "Machine")
-          $userPath = [Environment]::GetEnvironmentVariable("Path", "User")
-          $env:Path = "$machinePath;$userPath"
+          $refreshedEnvironment = @{}
+          foreach ($level in "Machine", "User") {
+            [Environment]::GetEnvironmentVariables($level).GetEnumerator() | ForEach-Object {
+              if ($_.Name -eq "Path") {
+                $_.Value = ("$env:Path;$($_.Value)" -split ";" | Select-Object -Unique) -join ";"
+              }
+              Set-Item -Path "Env:$($_.Name)" -Value $_.Value
+              $refreshedEnvironment[$_.Name] = $_.Value
+            }
+          }
+
           $env:Path -split ";" | Where-Object { $_ } | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
+          $refreshedEnvironment.GetEnumerator() | Where-Object { $_.Name -ne "Path" } | ForEach-Object {
+            "$($_.Name)=$($_.Value)" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+          }
+
+          if (-not $env:SDKROOT -or -not (Test-Path $env:SDKROOT)) {
+            throw "Swift installer did not configure a valid SDKROOT."
+          }
 
           swift --version
+          swiftc -print-target-info
 
       - name: Report toolchain
         run: swift --version
