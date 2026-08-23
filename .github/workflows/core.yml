@@ -1,0 +1,41 @@
+name: Core
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    name: Swift ${{ matrix.swift }} on ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os:
+          - macos-15
+          - ubuntu-24.04
+          - windows-2025
+        swift:
+          - "6.4"
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Install Swift
+        uses: swift-actions/setup-swift@v2
+        with:
+          swift-version: ${{ matrix.swift }}
+
+      - name: Install system SQLite
+        if: runner.os == 'Linux'
+        run: sudo apt-get update && sudo apt-get install --yes libsqlite3-dev
+
+      - name: Report toolchain
+        run: swift --version
+
+      - name: Run Core tests
+        run: swift test --package-path Core
