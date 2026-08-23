@@ -2,9 +2,9 @@
 .DS_Store
 
 # Swift Package Manager
-/.build/
-/.swiftpm/
-/Packages/
+.build
+.swiftpm
+Packages
 
 # Xcode user and build data
 DerivedData/
