@@ -53,6 +53,13 @@ jobs:
           grep -Fq "[lookup] Matches: 1 across 1 dictionaries." <<< "$normalized_lookup_output"
           grep -Fq "[debug] total:" <<< "$normalized_lookup_output"
 
+          deinflected_lookup_output="$(swift run --package-path Core TsubameCLI lookup 食べました --data-root "$smoke_root" --debug)"
+          echo "$deinflected_lookup_output"
+          grep -Fq "[lookup] Surface: 食べました" <<< "$deinflected_lookup_output"
+          grep -Fq "食べる【たべる】" <<< "$deinflected_lookup_output"
+          grep -Fq "[lookup] Matches: 1 across 1 dictionaries." <<< "$deinflected_lookup_output"
+          grep -Fq "sourceRange=0..<15" <<< "$deinflected_lookup_output"
+
   linux:
     name: Linux
     runs-on: ubuntu-latest
@@ -102,6 +109,13 @@ jobs:
           grep -Fq "ガクセイ【がくせい】" <<< "$normalized_lookup_output"
           grep -Fq "[lookup] Matches: 1 across 1 dictionaries." <<< "$normalized_lookup_output"
           grep -Fq "[debug] total:" <<< "$normalized_lookup_output"
+
+          deinflected_lookup_output="$(swift run --package-path Core TsubameCLI lookup 食べました --data-root "$smoke_root" --debug)"
+          echo "$deinflected_lookup_output"
+          grep -Fq "[lookup] Surface: 食べました" <<< "$deinflected_lookup_output"
+          grep -Fq "食べる【たべる】" <<< "$deinflected_lookup_output"
+          grep -Fq "[lookup] Matches: 1 across 1 dictionaries." <<< "$deinflected_lookup_output"
+          grep -Fq "sourceRange=0..<15" <<< "$deinflected_lookup_output"
 
   windows:
     name: Windows
@@ -191,3 +205,12 @@ jobs:
           if (-not ($normalizedLookupOutput -match "ガクセイ【がくせい】")) { throw "Normalized lookup did not return the expected entry." }
           if (-not ($normalizedLookupOutput -match "\[lookup\] Matches: 1 across 1 dictionaries\.")) { throw "Normalized lookup returned an unexpected match count." }
           if (-not ($normalizedLookupOutput -match "\[debug\] total:")) { throw "Normalized lookup did not report timing." }
+
+          $deinflectedLookupOutput = & swift run --package-path Core TsubameCLI lookup "食べました" --data-root $smokeRoot --debug 2>&1
+          $deinflectedLookupExitCode = $LASTEXITCODE
+          $deinflectedLookupOutput | ForEach-Object { Write-Host $_ }
+          if ($deinflectedLookupExitCode -ne 0) { exit $deinflectedLookupExitCode }
+          if (-not ($deinflectedLookupOutput -match "\[lookup\] Surface: 食べました")) { throw "Deinflected lookup did not report the original surface." }
+          if (-not ($deinflectedLookupOutput -match "食べる【たべる】")) { throw "Deinflected lookup did not return the expected entry." }
+          if (-not ($deinflectedLookupOutput -match "\[lookup\] Matches: 1 across 1 dictionaries\.")) { throw "Deinflected lookup returned an unexpected match count." }
+          if (-not ($deinflectedLookupOutput -match "sourceRange=0\.\.<15")) { throw "Deinflected lookup returned an unexpected source range." }
