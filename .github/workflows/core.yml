@@ -21,6 +21,10 @@ jobs:
       - name: Run Core tests
         run: swift test --package-path Core
 
+      - name: Smoke-test C ABI
+        shell: bash
+        run: Core/Tests/CABISmoke/run-smoke.sh Core
+
       - name: Smoke-test dictionary CLI
         shell: bash
         run: |
@@ -105,6 +109,10 @@ jobs:
 
       - name: Run Core tests
         run: swift test --package-path Core
+
+      - name: Smoke-test C ABI
+        shell: bash
+        run: Core/Tests/CABISmoke/run-smoke.sh Core
 
       - name: Smoke-test dictionary CLI
         shell: bash
@@ -214,6 +222,10 @@ jobs:
 
       - name: Run Core tests
         run: swift test --package-path Core
+
+      - name: Smoke-test C ABI
+        shell: pwsh
+        run: Core/Tests/CABISmoke/run-smoke.ps1 -CorePath Core
 
       - name: Smoke-test dictionary CLI
         shell: pwsh
