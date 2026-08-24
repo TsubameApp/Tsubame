@@ -1,4 +1,5 @@
-# Import
+# Core
+## Import
 
 1. Cancellation
 2. Source and resource hashes
@@ -6,3 +7,13 @@
 4. Clean up abandoned staging directories after crashes
 5. Enforce stricter memory bounds
 6. Update and reimport existing dictionaries
+
+# macOS
+1. Dictionary management
+2. Multiple active dictionaries
+3. Popup navigation, copy, and pin
+4. Configurable global shortcut
+5. Broader text capture / OCR
+6. Performance metrics and regression checks
+7. Launch at Login, icon, signing, updates, migrations
+8. More macOS integration tests
