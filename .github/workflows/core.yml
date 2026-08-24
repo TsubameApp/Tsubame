@@ -60,6 +60,13 @@ jobs:
           grep -Fq "[lookup] Matches: 1 across 1 dictionaries." <<< "$deinflected_lookup_output"
           grep -Fq "sourceRange=0..<15" <<< "$deinflected_lookup_output"
 
+          benchmark_output="$(swift run --package-path Core TsubameCLI bench lookup 食べました --data-root "$smoke_root" --warmup 1 --iterations 3)"
+          echo "$benchmark_output"
+          grep -Fq "[bench] Store open:" <<< "$benchmark_output"
+          grep -Fq "[bench] First lookup:" <<< "$benchmark_output"
+          grep -Fq "[bench] Warmed lookup: p50=" <<< "$benchmark_output"
+          grep -Fq "[bench] Checksum:" <<< "$benchmark_output"
+
   linux:
     name: Linux
     runs-on: ubuntu-latest
@@ -116,6 +123,13 @@ jobs:
           grep -Fq "食べる【たべる】" <<< "$deinflected_lookup_output"
           grep -Fq "[lookup] Matches: 1 across 1 dictionaries." <<< "$deinflected_lookup_output"
           grep -Fq "sourceRange=0..<15" <<< "$deinflected_lookup_output"
+
+          benchmark_output="$(swift run --package-path Core TsubameCLI bench lookup 食べました --data-root "$smoke_root" --warmup 1 --iterations 3)"
+          echo "$benchmark_output"
+          grep -Fq "[bench] Store open:" <<< "$benchmark_output"
+          grep -Fq "[bench] First lookup:" <<< "$benchmark_output"
+          grep -Fq "[bench] Warmed lookup: p50=" <<< "$benchmark_output"
+          grep -Fq "[bench] Checksum:" <<< "$benchmark_output"
 
   windows:
     name: Windows
@@ -214,3 +228,12 @@ jobs:
           if (-not ($deinflectedLookupOutput -match "食べる【たべる】")) { throw "Deinflected lookup did not return the expected entry." }
           if (-not ($deinflectedLookupOutput -match "\[lookup\] Matches: 1 across 1 dictionaries\.")) { throw "Deinflected lookup returned an unexpected match count." }
           if (-not ($deinflectedLookupOutput -match "sourceRange=0\.\.<15")) { throw "Deinflected lookup returned an unexpected source range." }
+
+          $benchmarkOutput = & swift run --package-path Core TsubameCLI bench lookup "食べました" --data-root $smokeRoot --warmup 1 --iterations 3 2>&1
+          $benchmarkExitCode = $LASTEXITCODE
+          $benchmarkOutput | ForEach-Object { Write-Host $_ }
+          if ($benchmarkExitCode -ne 0) { exit $benchmarkExitCode }
+          if (-not ($benchmarkOutput -match "\[bench\] Store open:")) { throw "Lookup benchmark did not report store-open timing." }
+          if (-not ($benchmarkOutput -match "\[bench\] First lookup:")) { throw "Lookup benchmark did not report first-lookup timing." }
+          if (-not ($benchmarkOutput -match "\[bench\] Warmed lookup: p50=")) { throw "Lookup benchmark did not report warmed percentiles." }
+          if (-not ($benchmarkOutput -match "\[bench\] Checksum:")) { throw "Lookup benchmark did not report its checksum." }
