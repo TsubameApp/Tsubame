@@ -41,6 +41,18 @@ jobs:
           test "$(find "$smoke_root/Dictionaries" -type f -name manifest.json | wc -l | tr -d ' ')" = "1"
           test "$(find "$smoke_root/Dictionaries" -type f -path '*/resources/images/bird.svg' | wc -l | tr -d ' ')" = "1"
 
+          exact_lookup_output="$(swift run --package-path Core TsubameCLI lookup ガクセイ --data-root "$smoke_root" --debug)"
+          echo "$exact_lookup_output"
+          grep -Fq "ガクセイ【がくせい】" <<< "$exact_lookup_output"
+          grep -Fq "[lookup] Matches: 1 across 1 dictionaries." <<< "$exact_lookup_output"
+          grep -Fq "[debug] total:" <<< "$exact_lookup_output"
+
+          normalized_lookup_output="$(swift run --package-path Core TsubameCLI lookup ｶﾞｸｾｲ --data-root "$smoke_root" --debug)"
+          echo "$normalized_lookup_output"
+          grep -Fq "ガクセイ【がくせい】" <<< "$normalized_lookup_output"
+          grep -Fq "[lookup] Matches: 1 across 1 dictionaries." <<< "$normalized_lookup_output"
+          grep -Fq "[debug] total:" <<< "$normalized_lookup_output"
+
   linux:
     name: Linux
     runs-on: ubuntu-latest
@@ -78,6 +90,18 @@ jobs:
           test "$(find "$smoke_root/Dictionaries" -type f -name dictionary.sqlite | wc -l | tr -d ' ')" = "1"
           test "$(find "$smoke_root/Dictionaries" -type f -name manifest.json | wc -l | tr -d ' ')" = "1"
           test "$(find "$smoke_root/Dictionaries" -type f -path '*/resources/images/bird.svg' | wc -l | tr -d ' ')" = "1"
+
+          exact_lookup_output="$(swift run --package-path Core TsubameCLI lookup ガクセイ --data-root "$smoke_root" --debug)"
+          echo "$exact_lookup_output"
+          grep -Fq "ガクセイ【がくせい】" <<< "$exact_lookup_output"
+          grep -Fq "[lookup] Matches: 1 across 1 dictionaries." <<< "$exact_lookup_output"
+          grep -Fq "[debug] total:" <<< "$exact_lookup_output"
+
+          normalized_lookup_output="$(swift run --package-path Core TsubameCLI lookup ｶﾞｸｾｲ --data-root "$smoke_root" --debug)"
+          echo "$normalized_lookup_output"
+          grep -Fq "ガクセイ【がくせい】" <<< "$normalized_lookup_output"
+          grep -Fq "[lookup] Matches: 1 across 1 dictionaries." <<< "$normalized_lookup_output"
+          grep -Fq "[debug] total:" <<< "$normalized_lookup_output"
 
   windows:
     name: Windows
@@ -151,3 +175,19 @@ jobs:
           if (@(Get-ChildItem -Path "$smokeRoot/Dictionaries" -Recurse -File -Filter "bird.svg").Count -ne 1) {
             throw "Expected copied SVG resource."
           }
+
+          $exactLookupOutput = & swift run --package-path Core TsubameCLI lookup "ガクセイ" --data-root $smokeRoot --debug 2>&1
+          $exactLookupExitCode = $LASTEXITCODE
+          $exactLookupOutput | ForEach-Object { Write-Host $_ }
+          if ($exactLookupExitCode -ne 0) { exit $exactLookupExitCode }
+          if (-not ($exactLookupOutput -match "ガクセイ【がくせい】")) { throw "Exact lookup did not return the expected entry." }
+          if (-not ($exactLookupOutput -match "\[lookup\] Matches: 1 across 1 dictionaries\.")) { throw "Exact lookup returned an unexpected match count." }
+          if (-not ($exactLookupOutput -match "\[debug\] total:")) { throw "Exact lookup did not report timing." }
+
+          $normalizedLookupOutput = & swift run --package-path Core TsubameCLI lookup "ｶﾞｸｾｲ" --data-root $smokeRoot --debug 2>&1
+          $normalizedLookupExitCode = $LASTEXITCODE
+          $normalizedLookupOutput | ForEach-Object { Write-Host $_ }
+          if ($normalizedLookupExitCode -ne 0) { exit $normalizedLookupExitCode }
+          if (-not ($normalizedLookupOutput -match "ガクセイ【がくせい】")) { throw "Normalized lookup did not return the expected entry." }
+          if (-not ($normalizedLookupOutput -match "\[lookup\] Matches: 1 across 1 dictionaries\.")) { throw "Normalized lookup returned an unexpected match count." }
+          if (-not ($normalizedLookupOutput -match "\[debug\] total:")) { throw "Normalized lookup did not report timing." }
