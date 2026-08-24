@@ -21,6 +21,26 @@ jobs:
       - name: Run Core tests
         run: swift test --package-path Core
 
+      - name: Smoke-test dictionary CLI
+        shell: bash
+        run: |
+          set -euo pipefail
+          smoke_root="$RUNNER_TEMP/tsubame-cli-smoke"
+          cli_temp="$RUNNER_TEMP/tsubame-cli-temporary"
+          mkdir -p "$cli_temp"
+          export TMPDIR="$cli_temp/"
+
+          dry_output="$(swift run --package-path Core TsubameCLI import Core/Tests/TsubameCLIPlatformTests/Resources/CLIYomitanDictionary --dry-run --debug)"
+          echo "$dry_output"
+          grep -Fq "[debug] bank 1/5" <<< "$dry_output"
+          grep -Fq "[debug] total import:" <<< "$dry_output"
+          test -z "$(find "$cli_temp" -maxdepth 1 -type d -name 'TsubameCLI-DryRun-*' -print -quit)"
+
+          swift run --package-path Core TsubameCLI import Core/Tests/TsubameCLIPlatformTests/Resources/CLIYomitanDictionary --data-root "$smoke_root" --debug
+          test "$(find "$smoke_root/Dictionaries" -type f -name dictionary.sqlite | wc -l | tr -d ' ')" = "1"
+          test "$(find "$smoke_root/Dictionaries" -type f -name manifest.json | wc -l | tr -d ' ')" = "1"
+          test "$(find "$smoke_root/Dictionaries" -type f -path '*/resources/images/bird.svg' | wc -l | tr -d ' ')" = "1"
+
   linux:
     name: Linux
     runs-on: ubuntu-latest
@@ -38,6 +58,26 @@ jobs:
 
       - name: Run Core tests
         run: swift test --package-path Core
+
+      - name: Smoke-test dictionary CLI
+        shell: bash
+        run: |
+          set -euo pipefail
+          smoke_root="$RUNNER_TEMP/tsubame-cli-smoke"
+          cli_temp="$RUNNER_TEMP/tsubame-cli-temporary"
+          mkdir -p "$cli_temp"
+          export TMPDIR="$cli_temp/"
+
+          dry_output="$(swift run --package-path Core TsubameCLI import Core/Tests/TsubameCLIPlatformTests/Resources/CLIYomitanDictionary --dry-run --debug)"
+          echo "$dry_output"
+          grep -Fq "[debug] bank 1/5" <<< "$dry_output"
+          grep -Fq "[debug] total import:" <<< "$dry_output"
+          test -z "$(find "$cli_temp" -maxdepth 1 -type d -name 'TsubameCLI-DryRun-*' -print -quit)"
+
+          swift run --package-path Core TsubameCLI import Core/Tests/TsubameCLIPlatformTests/Resources/CLIYomitanDictionary --data-root "$smoke_root" --debug
+          test "$(find "$smoke_root/Dictionaries" -type f -name dictionary.sqlite | wc -l | tr -d ' ')" = "1"
+          test "$(find "$smoke_root/Dictionaries" -type f -name manifest.json | wc -l | tr -d ' ')" = "1"
+          test "$(find "$smoke_root/Dictionaries" -type f -path '*/resources/images/bird.svg' | wc -l | tr -d ' ')" = "1"
 
   windows:
     name: Windows
@@ -80,3 +120,34 @@ jobs:
 
       - name: Run Core tests
         run: swift test --package-path Core
+
+      - name: Smoke-test dictionary CLI
+        shell: pwsh
+        run: |
+          $smokeRoot = Join-Path $env:RUNNER_TEMP "tsubame-cli-smoke"
+          $cliTemp = Join-Path $env:RUNNER_TEMP "tsubame-cli-temporary"
+          New-Item -ItemType Directory -Path $cliTemp -Force | Out-Null
+          $env:TEMP = $cliTemp
+          $env:TMP = $cliTemp
+
+          $dryOutput = & swift run --package-path Core TsubameCLI import Core/Tests/TsubameCLIPlatformTests/Resources/CLIYomitanDictionary --dry-run --debug 2>&1
+          $dryExitCode = $LASTEXITCODE
+          $dryOutput | ForEach-Object { Write-Host $_ }
+          if ($dryExitCode -ne 0) { exit $dryExitCode }
+          if (-not ($dryOutput -match "\[debug\] bank 1/5")) { throw "Missing bank progress output." }
+          if (-not ($dryOutput -match "\[debug\] total import:")) { throw "Missing total timing output." }
+          if (Get-ChildItem -Path $cliTemp -Directory -Filter "TsubameCLI-DryRun-*" -ErrorAction SilentlyContinue) {
+            throw "Dry run left a temporary bundle behind."
+          }
+
+          & swift run --package-path Core TsubameCLI import Core/Tests/TsubameCLIPlatformTests/Resources/CLIYomitanDictionary --data-root $smokeRoot --debug
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          if (@(Get-ChildItem -Path "$smokeRoot/Dictionaries" -Recurse -File -Filter "dictionary.sqlite").Count -ne 1) {
+            throw "Expected exactly one dictionary database."
+          }
+          if (@(Get-ChildItem -Path "$smokeRoot/Dictionaries" -Recurse -File -Filter "manifest.json").Count -ne 1) {
+            throw "Expected exactly one dictionary manifest."
+          }
+          if (@(Get-ChildItem -Path "$smokeRoot/Dictionaries" -Recurse -File -Filter "bird.svg").Count -ne 1) {
+            throw "Expected copied SVG resource."
+          }
