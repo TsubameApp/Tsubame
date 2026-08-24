@@ -60,12 +60,33 @@ jobs:
           grep -Fq "[lookup] Matches: 1 across 1 dictionaries." <<< "$deinflected_lookup_output"
           grep -Fq "sourceRange=0..<15" <<< "$deinflected_lookup_output"
 
+          scan_output="$(swift run --package-path Core TsubameCLI scan 前食べましたｶﾞｸｾｲ後 --range 3:33 --data-root "$smoke_root" --debug)"
+          echo "$scan_output"
+          grep -Fq "[scan] Selection: 食べましたｶﾞｸｾｲ" <<< "$scan_output"
+          grep -Fq "[scan] Surface: 食べました" <<< "$scan_output"
+          grep -Fq "[scan] Source range: 3..<18" <<< "$scan_output"
+          grep -Fq "食べる【たべる】" <<< "$scan_output"
+          grep -Fq "[scan] Source range: 3..<9" <<< "$scan_output"
+          grep -Fq "[scan] Surface: ｶﾞｸｾｲ" <<< "$scan_output"
+          grep -Fq "[scan] Source range: 18..<33" <<< "$scan_output"
+          grep -Fq "ガクセイ【がくせい】" <<< "$scan_output"
+          grep -Fq "[scan] Groups: 3, matches: 3 across 1 dictionaries." <<< "$scan_output"
+          grep -Fq "[debug] total:" <<< "$scan_output"
+
           benchmark_output="$(swift run --package-path Core TsubameCLI bench lookup 食べました --data-root "$smoke_root" --warmup 1 --iterations 3)"
           echo "$benchmark_output"
           grep -Fq "[bench] Store open:" <<< "$benchmark_output"
           grep -Fq "[bench] First lookup:" <<< "$benchmark_output"
           grep -Fq "[bench] Warmed lookup: p50=" <<< "$benchmark_output"
           grep -Fq "[bench] Checksum:" <<< "$benchmark_output"
+
+          scan_benchmark_output="$(swift run --package-path Core TsubameCLI bench scan 前食べましたｶﾞｸｾｲ後 --range 3:33 --data-root "$smoke_root" --warmup 1 --iterations 3)"
+          echo "$scan_benchmark_output"
+          grep -Fq "[bench] Store open:" <<< "$scan_benchmark_output"
+          grep -Fq "[bench] First scan:" <<< "$scan_benchmark_output"
+          grep -Fq "[bench] Warmed scan: p50=" <<< "$scan_benchmark_output"
+          grep -Fq "[bench] First result: 3 groups, 3 entries" <<< "$scan_benchmark_output"
+          grep -Fq "[bench] Checksum:" <<< "$scan_benchmark_output"
 
   linux:
     name: Linux
@@ -124,12 +145,33 @@ jobs:
           grep -Fq "[lookup] Matches: 1 across 1 dictionaries." <<< "$deinflected_lookup_output"
           grep -Fq "sourceRange=0..<15" <<< "$deinflected_lookup_output"
 
+          scan_output="$(swift run --package-path Core TsubameCLI scan 前食べましたｶﾞｸｾｲ後 --range 3:33 --data-root "$smoke_root" --debug)"
+          echo "$scan_output"
+          grep -Fq "[scan] Selection: 食べましたｶﾞｸｾｲ" <<< "$scan_output"
+          grep -Fq "[scan] Surface: 食べました" <<< "$scan_output"
+          grep -Fq "[scan] Source range: 3..<18" <<< "$scan_output"
+          grep -Fq "食べる【たべる】" <<< "$scan_output"
+          grep -Fq "[scan] Source range: 3..<9" <<< "$scan_output"
+          grep -Fq "[scan] Surface: ｶﾞｸｾｲ" <<< "$scan_output"
+          grep -Fq "[scan] Source range: 18..<33" <<< "$scan_output"
+          grep -Fq "ガクセイ【がくせい】" <<< "$scan_output"
+          grep -Fq "[scan] Groups: 3, matches: 3 across 1 dictionaries." <<< "$scan_output"
+          grep -Fq "[debug] total:" <<< "$scan_output"
+
           benchmark_output="$(swift run --package-path Core TsubameCLI bench lookup 食べました --data-root "$smoke_root" --warmup 1 --iterations 3)"
           echo "$benchmark_output"
           grep -Fq "[bench] Store open:" <<< "$benchmark_output"
           grep -Fq "[bench] First lookup:" <<< "$benchmark_output"
           grep -Fq "[bench] Warmed lookup: p50=" <<< "$benchmark_output"
           grep -Fq "[bench] Checksum:" <<< "$benchmark_output"
+
+          scan_benchmark_output="$(swift run --package-path Core TsubameCLI bench scan 前食べましたｶﾞｸｾｲ後 --range 3:33 --data-root "$smoke_root" --warmup 1 --iterations 3)"
+          echo "$scan_benchmark_output"
+          grep -Fq "[bench] Store open:" <<< "$scan_benchmark_output"
+          grep -Fq "[bench] First scan:" <<< "$scan_benchmark_output"
+          grep -Fq "[bench] Warmed scan: p50=" <<< "$scan_benchmark_output"
+          grep -Fq "[bench] First result: 3 groups, 3 entries" <<< "$scan_benchmark_output"
+          grep -Fq "[bench] Checksum:" <<< "$scan_benchmark_output"
 
   windows:
     name: Windows
@@ -229,6 +271,21 @@ jobs:
           if (-not ($deinflectedLookupOutput -match "\[lookup\] Matches: 1 across 1 dictionaries\.")) { throw "Deinflected lookup returned an unexpected match count." }
           if (-not ($deinflectedLookupOutput -match "sourceRange=0\.\.<15")) { throw "Deinflected lookup returned an unexpected source range." }
 
+          $scanOutput = & swift run --package-path Core TsubameCLI scan "前食べましたｶﾞｸｾｲ後" --range "3:33" --data-root $smokeRoot --debug 2>&1
+          $scanExitCode = $LASTEXITCODE
+          $scanOutput | ForEach-Object { Write-Host $_ }
+          if ($scanExitCode -ne 0) { exit $scanExitCode }
+          if (-not ($scanOutput -match "\[scan\] Selection: 食べましたｶﾞｸｾｲ")) { throw "Scan did not report the selected text." }
+          if (-not ($scanOutput -match "\[scan\] Surface: 食べました")) { throw "Scan did not report the deinflected surface." }
+          if (-not ($scanOutput -match "\[scan\] Source range: 3\.\.<18")) { throw "Scan returned an unexpected deinflected range." }
+          if (-not ($scanOutput -match "食べる【たべる】")) { throw "Scan did not return the deinflected entry." }
+          if (-not ($scanOutput -match "\[scan\] Source range: 3\.\.<9")) { throw "Scan did not preserve the overlapping shorter range." }
+          if (-not ($scanOutput -match "\[scan\] Surface: ｶﾞｸｾｲ")) { throw "Scan did not report the normalized surface." }
+          if (-not ($scanOutput -match "\[scan\] Source range: 18\.\.<33")) { throw "Scan returned an unexpected normalized range." }
+          if (-not ($scanOutput -match "ガクセイ【がくせい】")) { throw "Scan did not return the normalized entry." }
+          if (-not ($scanOutput -match "\[scan\] Groups: 3, matches: 3 across 1 dictionaries\.")) { throw "Scan returned unexpected totals." }
+          if (-not ($scanOutput -match "\[debug\] total:")) { throw "Scan did not report timing." }
+
           $benchmarkOutput = & swift run --package-path Core TsubameCLI bench lookup "食べました" --data-root $smokeRoot --warmup 1 --iterations 3 2>&1
           $benchmarkExitCode = $LASTEXITCODE
           $benchmarkOutput | ForEach-Object { Write-Host $_ }
@@ -237,3 +294,13 @@ jobs:
           if (-not ($benchmarkOutput -match "\[bench\] First lookup:")) { throw "Lookup benchmark did not report first-lookup timing." }
           if (-not ($benchmarkOutput -match "\[bench\] Warmed lookup: p50=")) { throw "Lookup benchmark did not report warmed percentiles." }
           if (-not ($benchmarkOutput -match "\[bench\] Checksum:")) { throw "Lookup benchmark did not report its checksum." }
+
+          $scanBenchmarkOutput = & swift run --package-path Core TsubameCLI bench scan "前食べましたｶﾞｸｾｲ後" --range "3:33" --data-root $smokeRoot --warmup 1 --iterations 3 2>&1
+          $scanBenchmarkExitCode = $LASTEXITCODE
+          $scanBenchmarkOutput | ForEach-Object { Write-Host $_ }
+          if ($scanBenchmarkExitCode -ne 0) { exit $scanBenchmarkExitCode }
+          if (-not ($scanBenchmarkOutput -match "\[bench\] Store open:")) { throw "Scan benchmark did not report store-open timing." }
+          if (-not ($scanBenchmarkOutput -match "\[bench\] First scan:")) { throw "Scan benchmark did not report first-scan timing." }
+          if (-not ($scanBenchmarkOutput -match "\[bench\] Warmed scan: p50=")) { throw "Scan benchmark did not report warmed percentiles." }
+          if (-not ($scanBenchmarkOutput -match "\[bench\] First result: 3 groups, 3 entries")) { throw "Scan benchmark returned unexpected first-result totals." }
+          if (-not ($scanBenchmarkOutput -match "\[bench\] Checksum:")) { throw "Scan benchmark did not report its checksum." }
