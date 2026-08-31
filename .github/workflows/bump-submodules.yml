@@ -1,0 +1,78 @@
+name: Bump component submodules
+
+on:
+  repository_dispatch:
+    types: [submodule-updated]
+
+permissions:
+  contents: write
+
+concurrency:
+  group: bump-component-submodules
+  cancel-in-progress: false
+
+jobs:
+  bump:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Validate dispatch source
+        env:
+          COMPONENT: ${{ github.event.client_payload.component }}
+          SOURCE_REPOSITORY: ${{ github.event.client_payload.repository }}
+          SOURCE_SHA: ${{ github.event.client_payload.sha }}
+        run: |
+          set -euo pipefail
+
+          case "${SOURCE_REPOSITORY}:${COMPONENT}" in
+            TsubameApp/Core:Core | \
+            TsubameApp/client-macos:macOS | \
+            TsubameApp/client-linux:Linux | \
+            TsubameApp/client-windows:Windows)
+              ;;
+            *)
+              echo "Unsupported component dispatch: ${SOURCE_REPOSITORY}:${COMPONENT}" >&2
+              exit 1
+              ;;
+          esac
+
+          if [[ ! "${SOURCE_SHA}" =~ ^[0-9a-f]{40,64}$ ]]; then
+            echo "Invalid source commit: ${SOURCE_SHA}" >&2
+            exit 1
+          fi
+
+      - name: Check out umbrella repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Update component pointers
+        id: update
+        run: |
+          set -euo pipefail
+
+          git submodule sync --recursive
+          git submodule update --init --remote --recursive
+          git add Core macOS Linux Windows
+
+          if git diff --cached --quiet; then
+            echo "changed=false" >> "${GITHUB_OUTPUT}"
+            echo "All component pointers are already current."
+          else
+            echo "changed=true" >> "${GITHUB_OUTPUT}"
+            git diff --cached --submodule=short
+          fi
+
+      - name: Commit and push updated pointers
+        if: steps.update.outputs.changed == 'true'
+        env:
+          SOURCE_REPOSITORY: ${{ github.event.client_payload.repository }}
+          SOURCE_SHA: ${{ github.event.client_payload.sha }}
+        run: |
+          set -euo pipefail
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit \
+            -m "build: bump component submodules" \
+            -m "Triggered by ${SOURCE_REPOSITORY}@${SOURCE_SHA}."
+          git push origin HEAD:main
