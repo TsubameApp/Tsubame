@@ -1,0 +1,16 @@
+[submodule "Core"]
+	path = Core
+	url = https://github.com/TsubameApp/Core.git
+	branch = main
+[submodule "macOS"]
+	path = macOS
+	url = https://github.com/TsubameApp/client-macos.git
+	branch = main
+[submodule "Linux"]
+	path = Linux
+	url = https://github.com/TsubameApp/client-linux.git
+	branch = main
+[submodule "Windows"]
+	path = Windows
+	url = https://github.com/TsubameApp/client-windows.git
+	branch = main
