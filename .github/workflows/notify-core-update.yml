@@ -1,0 +1,33 @@
+name: Notify macOS about a Core update
+
+on:
+  workflow_call:
+    secrets:
+      automation_token:
+        description: Fine-grained token allowed to dispatch events to client-macos
+        required: false
+
+permissions:
+  contents: read
+
+jobs:
+  notify:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Dispatch Core update
+        env:
+          GH_TOKEN: ${{ secrets.automation_token }}
+        run: |
+          set -euo pipefail
+
+          if [[ -z "${GH_TOKEN:-}" ]]; then
+            echo "::notice::TSUBAME_AUTOMATION_TOKEN is not configured; skipping macOS notification."
+            exit 0
+          fi
+
+          gh api \
+            --method POST \
+            repos/TsubameApp/client-macos/dispatches \
+            -f event_type=core-updated \
+            -f "client_payload[repository]=${GITHUB_REPOSITORY}" \
+            -f "client_payload[sha]=${GITHUB_SHA}"
