@@ -5,7 +5,7 @@ on:
     types: [submodule-updated]
 
 permissions:
-  contents: write
+  contents: read
 
 concurrency:
   group: bump-component-submodules
@@ -17,11 +17,17 @@ jobs:
     steps:
       - name: Validate dispatch source
         env:
+          AUTOMATION_TOKEN: ${{ secrets.TSUBAME_AUTOMATION_TOKEN }}
           COMPONENT: ${{ github.event.client_payload.component }}
           SOURCE_REPOSITORY: ${{ github.event.client_payload.repository }}
           SOURCE_SHA: ${{ github.event.client_payload.sha }}
         run: |
           set -euo pipefail
+
+          if [[ -z "${AUTOMATION_TOKEN:-}" ]]; then
+            echo "TSUBAME_AUTOMATION_TOKEN is not configured." >&2
+            exit 1
+          fi
 
           case "${SOURCE_REPOSITORY}:${COMPONENT}" in
             TsubameApp/Core:Core | \
@@ -44,6 +50,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
+          token: ${{ secrets.TSUBAME_AUTOMATION_TOKEN }}
 
       - name: Update component pointers
         id: update
